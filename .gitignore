@@ -1,0 +1,16 @@
+# JetBrains
+.idea/
+*.iws
+*.out
+*.app
+
+# CMake
+cmake-build-debug/
+cmake-build-release/
+
+# 原配置
+/shelf/
+/workspace.xml
+/httpRequests/
+/dataSources/
+/dataSources.local.xml

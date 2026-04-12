@@ -1,0 +1,10 @@
+//
+// Created by cT on 2026/4/10.
+//
+
+#ifndef PEARLCALCULATOR_INITIALIZE_H
+#define PEARLCALCULATOR_INITIALIZE_H
+
+void initialize();
+
+#endif //PEARLCALCULATOR_INITIALIZE_H
