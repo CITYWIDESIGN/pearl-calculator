@@ -2,6 +2,7 @@
 // Created by cT on 2026/4/11.
 //
 #include <algorithm>
+#include <vector>
 
 #include "solve.h"
 #include "calculateTNT.h"
@@ -63,9 +64,21 @@ std::vector<Plan> solve(vector2 destination)
         }
 
         // 执行 Y 坐标判断逻辑
-        if (calculatorConfig.accuracyPriority)
+        if (calculatorConfig.specifiesYPosition)
         {
+            // 多模拟 1gt 以判断珍珠是否落地
+            const std::vector<Simulate> results = simulatePearl(baseConfig, gameTick + 1);
 
+            // 检查逻辑：
+            // 第 gameTick 时：Y 坐标还在目标之上
+            // 第 gameTick + 1 时：Y 坐标已经到达或穿过目标
+            bool isLastTickAbove = (results[gameTick].Position.Y > targetYPosition &&
+                                    results[gameTick + 1].Position.Y <= targetYPosition);
+
+            if (!isLastTickAbove) {
+                continue;
+            }
+            // 判定成功：gameTick 就是珍珠穿过平面那一刻前的最后一个有效位置
         }
 
         // 局部搜索
@@ -74,10 +87,19 @@ std::vector<Plan> solve(vector2 destination)
             for (int b = std::max(0, baseConfig.blueTNT - 5); b <= baseConfig.blueTNT + 5; ++b)
             {
                 Configuration currentTry = {r, b, baseConfig.direction};
+                // 使用判定成功的这个 gameTick 来计算水平偏移
                 const double currentOffset = offset(destination, currentTry, gameTick);
 
-                // 偏移量在可接受范围才加入 过滤极端错误解
-                if (currentOffset >= 0 && currentOffset < 10.0)
+                // 1. currentOffset >= 0 是为了排除模拟失败的错误解
+                // 2. 如果开启了 specifiesYPosition，则使用更宽容的误差检查
+                bool isValid;
+                if (calculatorConfig.specifiesYPosition) {
+                    isValid = (currentOffset >= 0 && currentOffset < 150.0);
+                } else {
+                    isValid = (currentOffset >= 0 && currentOffset < 10.0);
+                }
+
+                if (isValid)
                 {
                     candidates.push_back({currentOffset, currentTry, gameTick});
                 }
@@ -87,7 +109,7 @@ std::vector<Plan> solve(vector2 destination)
         // 多重采样
         if (!candidates.empty())
         {
-            if (additional >= 10) break;
+            if (additional >= 100) break;
             additional++;
         }
     }

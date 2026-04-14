@@ -35,4 +35,6 @@ add_executable(PearlCalculator main.cpp
         debug/displaySolve.cpp
         debug/displaySolve.h
         CLI/run_cli.cpp
-        CLI/run_cli.h)
+        CLI/run_cli.h
+        utils/clearScreen.cpp
+        utils/clearScreen.h)

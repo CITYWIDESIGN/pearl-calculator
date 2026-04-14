@@ -149,6 +149,7 @@ struct Config
     bool below1_21_1;
     bool accuracyPriority;
     bool specifiesYPosition;
+    bool specifiesGameTick;
 };
 
 // 珍珠模拟所需返回值

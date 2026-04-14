@@ -15,7 +15,7 @@ void displaySolve(const std::vector<Plan>& candidates, vector2 destination) {
     }
 
     std::cout << "\nTarget: " << destination.X << ", " << destination.Z << "\n";
-    std::cout << "Rank\tOffset\t\tTick\t\tRed\t\tBlue\t\tDir\n";
+    std::cout << "Rank\tOffset\t\tTick\t\tRed\t\tBlue\t\tDir\n" << std::endl;
 
     int count = 0;
     std::cout << std::fixed << std::setprecision(8);
@@ -32,7 +32,7 @@ void displaySolve(const std::vector<Plan>& candidates, vector2 destination) {
 
     // 打印省略提示
     if (candidates.size() > 15) {
-        std::cout << "... [Omitted " << candidates.size() - 15 << " results]\n";
+        std::cout << "\n... [Omitted " << candidates.size() - 15 << " results]\n";
     }
 
     std::cout << std::endl;

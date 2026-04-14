@@ -1,0 +1,10 @@
+//
+// Created by cT on 2026/4/14.
+//
+
+#ifndef PEARLCALCULATOR_CLEARSCREEN_H
+#define PEARLCALCULATOR_CLEARSCREEN_H
+
+void clearScreen();
+
+#endif //PEARLCALCULATOR_CLEARSCREEN_H
