@@ -4,8 +4,9 @@
 
 #ifndef PEARLCALCULATOR_CREATECONFIG_H
 #define PEARLCALCULATOR_CREATECONFIG_H
+
 #include <string>
 
-void createConfig(const std::string& path);
+void createDefaultConfiguration(const std::string& path);
 
-#endif //PEARLCALCULATOR_CREATECONFIG_H
+#endif // PEARLCALCULATOR_CREATECONFIG_H

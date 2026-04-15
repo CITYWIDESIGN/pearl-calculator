@@ -4,8 +4,9 @@
 
 #ifndef PEARLCALCULATOR_SOLVE_H
 #define PEARLCALCULATOR_SOLVE_H
+
 #include "../data.h"
 
-std::vector<Plan> solve(vector2 destination);
+std::vector<LaunchPlan> solveLaunchPlans(Vector2 destination);
 
-#endif //PEARLCALCULATOR_SOLVE_H
+#endif // PEARLCALCULATOR_SOLVE_H

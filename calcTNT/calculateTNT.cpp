@@ -1,58 +1,60 @@
 //
 // Created by cT on 2026/4/11.
 //
+
 #include <cmath>
 
 #include "calculateTNT.h"
+
+#include "../data.h"
 #include "../utils/calculateSingleTNTContribution.h"
 #include "assignTNT.h"
-#include "../data.h"
 
-Configuration calculateTNT(const vector2 targetPosition, const int consumingTicks)
+TntConfiguration calculateTntRequirement(const Vector2 targetPosition, const int travelTicks)
 {
-    // 计算目的地相对于珍珠发射点的位移
-    const vector2 offset = {
-        targetPosition.X - pearl.Position.X,
-        targetPosition.Z - pearl.Position.Z
+    // 计算目标点相对于珍珠发射点的水平位移。
+    const Vector2 targetOffset = {
+        targetPosition.x - g_appState.pearl.position.x,
+        targetPosition.z - g_appState.pearl.position.z
     };
 
-    // 执行版本判断逻辑
-    double totalDisplacementWeight;
-    if (calculatorConfig.below1_21_1)
+    double totalDisplacementWeight = 0.0;
+
+    // 根据版本差异选择位移权重公式。
+    if (g_appState.calculatorSettings.below1_21_1)
     {
-        // 计算总位移权重 totalDisplacementWeight (1.21.1 and below)
-        totalDisplacementWeight = (1.0 - pow(0.99, consumingTicks)) / (1.0 - 0.99);
-    }else
+        totalDisplacementWeight = (1.0 - std::pow(0.99, travelTicks)) / (1.0 - 0.99);
+    }
+    else
     {
-        // 计算总位移权重 totalDisplacementWeight (1.21.1 and above)
-        totalDisplacementWeight = 0.99 * (1.0 - pow(0.99, consumingTicks)) / (1.0 - 0.99);
+        totalDisplacementWeight = 0.99 * (1.0 - std::pow(0.99, travelTicks)) / (1.0 - 0.99);
     }
 
-    // 计算目标速度
-    const auto [X, Z] = offset / totalDisplacementWeight;
-
-    // 计算所需速度
-    const vector2 requiredVelocity = {
-        X - pearl.Motion.X,
-        Z - pearl.Motion.Z
+    // 计算命中目标所需的总速度。
+    const auto [targetVelocityX, targetVelocityZ] = targetOffset / totalDisplacementWeight;
+    const Vector2 requiredImpulse = {
+        targetVelocityX - g_appState.pearl.motion.x,
+        targetVelocityZ - g_appState.pearl.motion.z
     };
 
-    // 计算推力矢量的大小（模长）
-    const vector3 singleTNTMotion = calculateSingleTNTContribution(tntPosition.NorthEast, pearl.Position);
-    const double length = singleTNTMotion.lengthHorizontal();
+    // 计算单个 TNT 在水平面的推力模长。
+    const Vector3 singleTntMotion = calculateSingleTntContribution(
+        g_appState.tntPositions.northEast,
+        g_appState.pearl.position
+    );
+    const double singleTntHorizontalStrength = singleTntMotion.horizontalLength();
 
-    // C1 和 C2 代表两个 45 度轴向上的 TNT 需求系数
-    const double C1 = (-requiredVelocity.X + requiredVelocity.Z) / (sqrt(2.0) * length);
-    const double C2 = (requiredVelocity.X + requiredVelocity.Z) / (sqrt(2.0) * length);
+    // 解算两个 45 度轴上的需求系数。
+    const double axisC1 = (-requiredImpulse.x + requiredImpulse.z) / (std::sqrt(2.0) * singleTntHorizontalStrength);
+    const double axisC2 = (requiredImpulse.x + requiredImpulse.z) / (std::sqrt(2.0) * singleTntHorizontalStrength);
 
-    // 解得炮膛布局
-    barrelLayout = {
-        std::max(C1, 0.0),
-        std::max(C2, 0.0),
-        std::max(-C2, 0.0),
-        std::max(-C1, 0.0)
+    // 保存当前炮膛布局权重，供调试或后续扩展使用。
+    g_appState.barrelLayout = {
+        std::max(axisC1, 0.0),
+        std::max(axisC2, 0.0),
+        std::max(-axisC2, 0.0),
+        std::max(-axisC1, 0.0)
     };
 
-    // 返回分配后的TNT与方向
-    return assignTNT(barrelLayout);
+    return assignTntConfiguration(g_appState.barrelLayout);
 }

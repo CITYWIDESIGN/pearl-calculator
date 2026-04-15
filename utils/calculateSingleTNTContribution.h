@@ -7,6 +7,6 @@
 
 #include "../data.h"
 
-vector3 calculateSingleTNTContribution(const vector3& TNTPos, const vector3& pearlPos);
+Vector3 calculateSingleTntContribution(const Vector3& tntPosition, const Vector3& pearlPosition);
 
-#endif //PEARLCALCULATOR_CALCULATESINGLETNTCONTRIBUTION_H
+#endif // PEARLCALCULATOR_CALCULATESINGLETNTCONTRIBUTION_H

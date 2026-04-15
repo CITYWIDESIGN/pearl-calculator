@@ -4,8 +4,9 @@
 
 #ifndef PEARLCALCULATOR_MAXIMUMRANGE_H
 #define PEARLCALCULATOR_MAXIMUMRANGE_H
+
 #include "../data.h"
 
-bool maximumRange(vector2 destination);
+bool isWithinMaximumRange(Vector2 destination);
 
-#endif //PEARLCALCULATOR_MAXIMUMRANGE_H
+#endif // PEARLCALCULATOR_MAXIMUMRANGE_H

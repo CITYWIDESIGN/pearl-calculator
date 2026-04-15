@@ -1,28 +1,27 @@
 //
 // Created by cT on 2026/4/11.
 //
-#include <iostream>
-#include <vector>
-#include <iomanip>
 
 #include "displaySimulateResult.h"
-#include "../data.h"
 
-void displaySimulateResult(const std::vector<Simulate>& trajectory)
+#include <iomanip>
+#include <iostream>
+#include <vector>
+
+void displaySimulationResult(const std::vector<SimulationPoint>& trajectory)
 {
     std::cout << "珍珠模拟结果" << std::endl << std::endl;
 
-    // 打印表头
-    // 保留6位小数
+    // 打印统一精度的表头与轨迹数据。
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "Tick\tPositionX\tPositionY\tPositionZ\tMotionX    \tMotionY   \tMotionZ" << std::endl << std::endl;
 
-    // 遍历 vector
-    for (const auto& [Position, Motion, GameTick] : trajectory)
+    for (const auto& [position, motion, gameTick] : trajectory)
     {
-        std::cout << GameTick << "  \t"
-        << Position.X << "\t" << Position.Y << "\t" << Position.Z << "\t"
-        << Motion.X << "\t" << Motion.Y << "\t" << Motion.Z << std::endl;
+        std::cout << gameTick << "  \t"
+            << position.x << "\t" << position.y << "\t" << position.z << "\t"
+            << motion.x << "\t" << motion.y << "\t" << motion.z << std::endl;
     }
+
     std::cout << "\n总计模拟时长: " << trajectory.size() - 1 << " ticks" << std::endl;
 }

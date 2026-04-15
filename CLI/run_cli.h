@@ -5,6 +5,6 @@
 #ifndef PEARLCALCULATOR_RUN_CLI_H
 #define PEARLCALCULATOR_RUN_CLI_H
 
-void run_cli();
+void runCli();
 
-#endif //PEARLCALCULATOR_RUN_CLI_H
+#endif // PEARLCALCULATOR_RUN_CLI_H

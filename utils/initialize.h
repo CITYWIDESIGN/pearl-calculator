@@ -5,6 +5,6 @@
 #ifndef PEARLCALCULATOR_INITIALIZE_H
 #define PEARLCALCULATOR_INITIALIZE_H
 
-void initialize();
+void initializeApplication();
 
-#endif //PEARLCALCULATOR_INITIALIZE_H
+#endif // PEARLCALCULATOR_INITIALIZE_H

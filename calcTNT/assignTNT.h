@@ -4,8 +4,9 @@
 
 #ifndef PEARLCALCULATOR_ASSIGNTNT_H
 #define PEARLCALCULATOR_ASSIGNTNT_H
+
 #include "../data.h"
 
-Configuration assignTNT(const Layout& layout);
+TntConfiguration assignTntConfiguration(const BarrelLayout& layout);
 
-#endif //PEARLCALCULATOR_ASSIGNTNT_H
+#endif // PEARLCALCULATOR_ASSIGNTNT_H

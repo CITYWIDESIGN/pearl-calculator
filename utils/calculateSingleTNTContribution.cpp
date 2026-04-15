@@ -3,53 +3,56 @@
 //
 
 #include "calculateSingleTNTContribution.h"
-#include "../data.h"
+
 #include "getDistance3D.h"
 
-vector3 calculateSingleTNTContribution(const vector3& TNTPos, const vector3& pearlPos)
+Vector3 calculateSingleTntContribution(const Vector3& tntPosition, const Vector3& pearlPosition)
 {
-    // TNT的爆心
-    const vector3 TNTExplosionCenter = {
-        TNTPos.X,
-        TNTPos.Y + 0.06125,
-        TNTPos.Z
+    // 计算 TNT 爆心坐标。
+    const Vector3 explosionCenter = {
+        tntPosition.x,
+        tntPosition.y + 0.06125,
+        tntPosition.z
     };
 
-    // TNT爆心与珍珠之间的距离
-    double explosionToPearlDistance = getDistance3D(TNTExplosionCenter, pearlPos);
+    // 计算 TNT 爆心到珍珠本体的距离。
+    const double explosionToPearlDistance = calculateDistance3D(explosionCenter, pearlPosition);
 
-    // 向量归一化
-    const float v0 = std::max(0.0f, static_cast<float>((8.0 - explosionToPearlDistance) / 8.0));
+    // 根据爆炸衰减计算推力强度。
+    const float normalizedStrength = std::max(
+        0.0f,
+        static_cast<float>((8.0 - explosionToPearlDistance) / 8.0)
+    );
 
-    // 珍珠眼部坐标
-    const vector3 pearlEyePosition = {
-        pearlPos.X,
-        pearlPos.Y + 0.25f * 0.85f,
-        pearlPos.Z
+    // 计算珍珠眼部坐标。
+    const Vector3 pearlEyePosition = {
+        pearlPosition.x,
+        pearlPosition.y + 0.25f * 0.85f,
+        pearlPosition.z
     };
 
-    // TNT爆心到珍珠眼部之间的距离
-    const double explosionToEyeDistance = getDistance3D(TNTExplosionCenter, pearlEyePosition);
+    // 计算 TNT 爆心到珍珠眼部的距离。
+    const double explosionToEyeDistance = calculateDistance3D(explosionCenter, pearlEyePosition);
 
-    // 方向向量
-    const vector3 direction = {
-        pearlEyePosition.X - TNTExplosionCenter.X,
-        pearlEyePosition.Y - TNTExplosionCenter.Y,
-        pearlEyePosition.Z - TNTExplosionCenter.Z
+    // 构造爆心指向珍珠眼部的方向向量。
+    const Vector3 direction = {
+        pearlEyePosition.x - explosionCenter.x,
+        pearlEyePosition.y - explosionCenter.y,
+        pearlEyePosition.z - explosionCenter.z
     };
 
-    // 防止零值
+    // 避免出现除以零。
     if (explosionToEyeDistance == 0.0)
     {
-        return {0, 0, 0};
+        return {0.0, 0.0, 0.0};
     }
 
-    // 单位化
-    const double scale = v0 / explosionToEyeDistance;
+    // 归一化并缩放方向向量。
+    const double scale = normalizedStrength / explosionToEyeDistance;
 
     return {
-        direction.X * scale,
-        direction.Y * scale,
-        direction.Z * scale
+        direction.x * scale,
+        direction.y * scale,
+        direction.z * scale
     };
 }

@@ -1,15 +1,16 @@
 //
 // Created by cT on 2026/4/10.
 //
+
 #include <cmath>
 
 #include "getDistance3D.h"
-#include "../data.h"
 
-double getDistance3D(const vector3& posA, const vector3& posB)
+double calculateDistance3D(const Vector3& startPosition, const Vector3& endPosition)
 {
-    const double dx = posB.X - posA.X;
-    const double dy = posB.Y - posA.Y;
-    const double dz = posB.Z - posA.Z;
-    return std::sqrt(dx * dx + dy * dy + dz * dz);
+    const double deltaX = endPosition.x - startPosition.x;
+    const double deltaY = endPosition.y - startPosition.y;
+    const double deltaZ = endPosition.z - startPosition.z;
+
+    return std::sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
 }

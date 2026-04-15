@@ -4,8 +4,9 @@
 
 #ifndef PEARLCALCULATOR_CALCULATETNT_H
 #define PEARLCALCULATOR_CALCULATETNT_H
+
 #include "../data.h"
 
-Configuration calculateTNT(vector2 targetPosition, int consumingTicks);
+TntConfiguration calculateTntRequirement(Vector2 targetPosition, int travelTicks);
 
-#endif //PEARLCALCULATOR_CALCULATETNT_H
+#endif // PEARLCALCULATOR_CALCULATETNT_H

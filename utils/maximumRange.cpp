@@ -3,55 +3,47 @@
 //
 
 #include "maximumRange.h"
+
+#include <cmath>
+
 #include "../data.h"
 #include "../simulationPearl/calculatePearlInitialMotion.h"
 
-// 最大射程
-bool maximumRange(vector2 destination)
+bool isWithinMaximumRange(const Vector2 destination)
 {
-    // 最大当量下的初始 Motion
-    const vector3 initialMotion = calculatePearlInitialMotion(maxTNT, maxTNT, "North");
+    // 使用最大 TNT 当量估算最远可达的初速度。
+    const Vector3 initialMotion = calculateInitialPearlMotion(g_appState.maxTnt, g_appState.maxTnt, "North");
 
-    // 定义最大射程
-    double maximumRange = 0;
+    double verticalPosition = 0.0;
+    double verticalVelocity = initialMotion.y;
+    int gameTick = 0;
 
-    double y = 0.0;
-    double v = initialMotion.Y;
-
-    // 计算最大飞行时间
-    int tick = 0;
-
-    if (calculatorConfig.below1_21_1)
+    // 通过竖直方向模拟估算总飞行时间。
+    if (g_appState.calculatorSettings.below1_21_1)
     {
-        while (y > -256.0 && tick < 10000)
+        while (verticalPosition > -256.0 && gameTick < 10000)
         {
-            y += v;
-            v *= 0.99;
-            v -= 0.03;
-            tick++;
+            verticalPosition += verticalVelocity;
+            verticalVelocity *= 0.99;
+            verticalVelocity -= 0.03;
+            gameTick++;
         }
     }
     else
     {
-        while (y > -256.0 && tick < 10000)
+        while (verticalPosition > -256.0 && gameTick < 10000)
         {
-            v -= 0.03;
-            v *= 0.99;
-            y += v;
-            tick++;
+            verticalVelocity -= 0.03;
+            verticalVelocity *= 0.99;
+            verticalPosition += verticalVelocity;
+            gameTick++;
         }
     }
 
-    // 计算最大射程
-    const double horizontalSpeed = std::sqrt(initialMotion.X * initialMotion.X + initialMotion.Z * initialMotion.Z);
+    // 依据水平速度与空气阻力估算最大水平射程。
+    const double horizontalSpeed = std::sqrt(initialMotion.x * initialMotion.x + initialMotion.z * initialMotion.z);
+    const double maximumHorizontalRange = horizontalSpeed * 100.0 * (1 - std::pow(0.99, gameTick));
+    const double targetDistance = std::sqrt(destination.x * destination.x + destination.z * destination.z);
 
-    maximumRange = horizontalSpeed * 100.0 * (1 - pow(0.99, tick));
-
-    // 判断是否在最大射程内
-    const double targetDistance = std::sqrt(
-        destination.X * destination.X +
-        destination.Z * destination.Z
-    );
-
-    return targetDistance <= maximumRange;
+    return targetDistance <= maximumHorizontalRange;
 }

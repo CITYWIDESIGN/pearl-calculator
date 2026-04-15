@@ -4,8 +4,9 @@
 
 #ifndef PEARLCALCULATOR_CALCULATEPEARLINITIALMOTION_H
 #define PEARLCALCULATOR_CALCULATEPEARLINITIALMOTION_H
+
 #include "../data.h"
 
-vector3 calculatePearlInitialMotion(int redTNTCount, int blueTNTCount, const std::string& direction);
+Vector3 calculateInitialPearlMotion(int redTntCount, int blueTntCount, const std::string& direction);
 
-#endif //PEARLCALCULATOR_CALCULATEPEARLINITIALMOTION_H
+#endif // PEARLCALCULATOR_CALCULATEPEARLINITIALMOTION_H

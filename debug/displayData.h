@@ -5,6 +5,6 @@
 #ifndef PEARLCALCULATOR_DISPLAYDATA_H
 #define PEARLCALCULATOR_DISPLAYDATA_H
 
-void displayAllConfigData();
+void displayApplicationState();
 
-#endif //PEARLCALCULATOR_DISPLAYDATA_H
+#endif // PEARLCALCULATOR_DISPLAYDATA_H

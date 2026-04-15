@@ -5,193 +5,195 @@
 #ifndef PEARLCALCULATOR_DATA_H
 #define PEARLCALCULATOR_DATA_H
 
+#include <cmath>
 #include <string>
 #include <vector>
-#include <cmath>
 
-// 基础坐标结构
-struct vector3
+// 三维坐标与向量。
+struct Vector3
 {
-    double X, Y, Z;
+    double x{};
+    double y{};
+    double z{};
 
-    // 分量加法
-    vector3 operator+(const vector3& other) const
+    // 执行分量加法。
+    Vector3 operator+(const Vector3& other) const
     {
-        return {X + other.X, Y + other.Y, Z + other.Z};
+        return {x + other.x, y + other.y, z + other.z};
     }
 
-    // 分量减法
-    vector3 operator-(const vector3& other) const
+    // 执行分量减法。
+    Vector3 operator-(const Vector3& other) const
     {
-        return {X - other.X, Y - other.Y, Z - other.Z};
+        return {x - other.x, y - other.y, z - other.z};
     }
 
-    // 分量乘法
-    vector3 operator*(const vector3& other) const
+    // 执行分量乘法。
+    Vector3 operator*(const Vector3& other) const
     {
-        return {X * other.X, Y * other.Y, Z * other.Z};
+        return {x * other.x, y * other.y, z * other.z};
     }
 
-    // 标量乘法
-    vector3 operator*(const double scalar) const
+    // 执行标量乘法。
+    Vector3 operator*(double scalar) const
     {
-        return {X * scalar, Y * scalar, Z * scalar};
+        return {x * scalar, y * scalar, z * scalar};
     }
 
-    // 分量除法
-    vector3 operator/(const vector3& other) const
+    // 执行分量除法。
+    Vector3 operator/(const Vector3& other) const
     {
-        return {X / other.X, Y / other.Y, Z / other.Z};
+        return {x / other.x, y / other.y, z / other.z};
     }
 
-    // 标量除法
-    vector3 operator/(const double scalar) const
+    // 执行标量除法。
+    Vector3 operator/(double scalar) const
     {
-        return {X / scalar, Y / scalar, Z / scalar};
+        return {x / scalar, y / scalar, z / scalar};
     }
 
-    // 全空间模长
+    // 计算三维模长。
     [[nodiscard]] double length() const
     {
-        return std::sqrt(X * X + Y * Y + Z * Z);
+        return std::sqrt(x * x + y * y + z * z);
     }
 
-    // 水平空间模长
-    [[nodiscard]] double lengthHorizontal() const
+    // 计算水平模长。
+    [[nodiscard]] double horizontalLength() const
     {
-        return std::sqrt(X * X + Z * Z);
+        return std::sqrt(x * x + z * z);
     }
 };
 
-struct vector2
+// 水平二维坐标与向量。
+struct Vector2
 {
-    double X, Z;
+    double x{};
+    double z{};
 
-    // 分量加法
-    vector2 operator+(const vector2& other) const
+    // 执行分量加法。
+    Vector2 operator+(const Vector2& other) const
     {
-        return {X + other.X, Z + other.Z};
+        return {x + other.x, z + other.z};
     }
 
-    // 分量减法
-    vector2 operator-(const vector2& other) const
+    // 执行分量减法。
+    Vector2 operator-(const Vector2& other) const
     {
-        return {X - other.X, Z - other.Z};
+        return {x - other.x, z - other.z};
     }
 
-    // 分量乘法
-    vector2 operator*(const vector2& other) const
+    // 执行分量乘法。
+    Vector2 operator*(const Vector2& other) const
     {
-        return {X * other.X, Z * other.Z};
+        return {x * other.x, z * other.z};
     }
 
-    // 标量乘法
-    vector2 operator*(const double scalar) const
+    // 执行标量乘法。
+    Vector2 operator*(double scalar) const
     {
-        return {X * scalar, Z * scalar};
+        return {x * scalar, z * scalar};
     }
 
-    // 分量除法
-    vector2 operator/(const vector2& other) const
+    // 执行分量除法。
+    Vector2 operator/(const Vector2& other) const
     {
-        return {X / other.X, Z / other.Z};
+        return {x / other.x, z / other.z};
     }
 
-    // 标量除法
-    vector2 operator/(const double scalar) const
+    // 执行标量除法。
+    Vector2 operator/(double scalar) const
     {
-        return {X / scalar, Z / scalar};
+        return {x / scalar, z / scalar};
     }
 
-    // 水平空间模长
-    [[nodiscard]] double lengthHorizontal() const
+    // 计算水平模长。
+    [[nodiscard]] double horizontalLength() const
     {
-        return std::sqrt(X * X + Z * Z);
+        return std::sqrt(x * x + z * z);
     }
 };
 
-// TNT方位结构
-struct TNTPos
+// 四个 TNT 槽位的空间坐标。
+struct TntPositions
 {
-    vector3 NorthEast;
-    vector3 NorthWest;
-    vector3 SouthEast;
-    vector3 SouthWest;
+    Vector3 northEast;
+    Vector3 northWest;
+    Vector3 southEast;
+    Vector3 southWest;
 };
 
-// 珍珠状态结构
-struct PearlInfo
+// 珍珠的初始状态。
+struct PearlState
 {
-    vector3 Position;
-    vector3 Motion;
+    Vector3 position;
+    Vector3 motion;
 };
 
-// 落点配置
-struct Configuration
+// 一组红蓝 TNT 与方向配置。
+struct TntConfiguration
 {
-    int redTNT;
-    int blueTNT;
+    int redTnt{};
+    int blueTnt{};
     std::string direction;
 };
 
-// 炮膛布局
-struct Layout
+// 解析出来的炮膛布局权重。
+struct BarrelLayout
 {
-    double NorthEast;
-    double NorthWest;
-    double SouthEast;
-    double SouthWest;
+    double northEast{};
+    double northWest{};
+    double southEast{};
+    double southWest{};
 };
 
-// 计算器配置
-struct Config
+// 计算器的运行设置。
+struct CalculatorSettings
 {
-    bool below1_21_1;
-    bool accuracyPriority;
-    bool specifiesYPosition;
-    bool specifiesGameTick;
+    bool below1_21_1{};
+    bool accuracyPriority{};
+    bool specifiesYPosition{};
+    bool specifiesGameTick{};
 };
 
-// 珍珠模拟所需返回值
-struct Simulate
+// 单个游戏刻的模拟结果。
+struct SimulationPoint
 {
-    vector3 Position;
-    vector3 Motion;
-    int GameTick;
+    Vector3 position;
+    Vector3 motion;
+    int gameTick{};
 };
 
-// 计算结果
-struct Plan
+// 一条求解出的候选方案。
+struct LaunchPlan
 {
     double landingOffset{};
-    Configuration Result;
-    int arriveGameTick;
+    TntConfiguration configuration;
+    int arrivalGameTick{};
 };
 
-// --- 全局变量声明 ---
+// 项目级共享状态。
+struct AppState
+{
+    TntPositions tntPositions;
+    Vector2 pearlOffset;
+    PearlState pearl;
 
-// 物理信息
-extern TNTPos tntPosition;
-extern vector2 pearlOffset;
-extern PearlInfo pearl;
-extern Simulate result;
+    Vector3 destination;
+    BarrelLayout barrelLayout;
+    CalculatorSettings calculatorSettings;
 
-// 基础配置
-extern vector3 destination;
-extern Configuration configuration;
-extern Layout barrelLayout;
-extern Config calculatorConfig;
-extern std::string version;
-extern Plan calculateResult;
-extern double targetYPosition;
-extern int maxTNT;
+    std::string version;
+    double targetYPosition{};
+    int maxTnt{};
 
-// 方向配置
-extern std::string defaultRedTNTDirection;
-extern std::string defaultBlueTNTDirection;
+    std::string defaultRedTntDirection;
+    std::string defaultBlueTntDirection;
 
-// ROM槽位数据
-extern std::vector<int> redSlots;
-extern std::vector<int> blueSlots;
+    std::vector<int> redSlots;
+    std::vector<int> blueSlots;
+};
+
+extern AppState g_appState;
 
 #endif // PEARLCALCULATOR_DATA_H

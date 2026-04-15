@@ -7,6 +7,6 @@
 
 #include "../data.h"
 
-double getDistance3D(const vector3& posA, const vector3& posB);
+double calculateDistance3D(const Vector3& startPosition, const Vector3& endPosition);
 
-#endif //PEARLCALCULATOR_GETDISTANCE3D_H
+#endif // PEARLCALCULATOR_GETDISTANCE3D_H

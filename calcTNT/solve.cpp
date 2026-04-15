@@ -1,144 +1,149 @@
 //
 // Created by cT on 2026/4/11.
 //
-#include <algorithm>
-#include <vector>
 
 #include "solve.h"
-#include "calculateTNT.h"
+
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
 #include "../data.h"
-#include "../utils/maximumRange.h"
 #include "../simulationPearl/simulatePearl.h"
+#include "../utils/maximumRange.h"
+#include "calculateTNT.h"
 
-#define MAX_TRAVEL_TICK 1000
-
-// 实际落点距离理论落点的偏移距离
-static double offset(vector2 destination, const Configuration& calculateResult, int consumingTicks)
+namespace
 {
-    // 模拟珍珠轨迹
-    const std::vector<Simulate> results = simulatePearl(calculateResult, consumingTicks);
+    constexpr int kMaxTravelTick = 1000;
 
-    // 检查结果是否有效
-    if (results.size() <= consumingTicks)
+    double calculateLandingOffset(
+        const Vector2 destination,
+        const TntConfiguration& launchConfiguration,
+        const int travelTicks
+    )
     {
-        return -1.0;
+        // 通过轨迹模拟获取指定刻的真实落点。
+        const std::vector<SimulationPoint> trajectory = simulatePearlTrajectory(launchConfiguration, travelTicks);
+        if (trajectory.size() <= static_cast<std::size_t>(travelTicks))
+        {
+            return -1.0;
+        }
+
+        const Vector2 actualPosition = {
+            trajectory[travelTicks].position.x,
+            trajectory[travelTicks].position.z
+        };
+        const double deltaX = actualPosition.x - destination.x;
+        const double deltaZ = actualPosition.z - destination.z;
+
+        return std::sqrt(deltaX * deltaX + deltaZ * deltaZ);
     }
-
-    // 获取实际珍珠在指定 tick 的水平位置
-    const vector2 realPosition = {
-        results[consumingTicks].Position.X,
-        results[consumingTicks].Position.Z
-    };
-
-    // 计算两点之间的距离
-    const double dx = realPosition.X - destination.X;
-    const double dz = realPosition.Z - destination.Z;
-
-    return std::sqrt(dx * dx + dz * dz);
 }
 
-// 求解函数
-std::vector<Plan> solve(vector2 destination)
+std::vector<LaunchPlan> solveLaunchPlans(const Vector2 destination)
 {
-    // 排除超出射程的落点
-    if (!maximumRange(destination))
+    // 先排除明显超出射程的目标点。
+    if (!isWithinMaximumRange(destination))
     {
         return {};
     }
 
-    // 定义动态结构体
-    std::vector<Plan> candidates;
-    // 预留内存空间
+    std::vector<LaunchPlan> candidates;
     candidates.reserve(1331);
-    int additional = 0;
 
-    for (int gameTick = 1; gameTick < MAX_TRAVEL_TICK; gameTick++)
+    int additionalSamples = 0;
+
+    for (int gameTick = 1; gameTick < kMaxTravelTick; gameTick++)
     {
-        // 理论计算结果
-        const Configuration baseConfig = calculateTNT(destination, gameTick);
+        // 先计算理论 TNT 配置。
+        const TntConfiguration baseConfiguration = calculateTntRequirement(destination, gameTick);
 
-        // 超出上限跳过本次循环
-        if (baseConfig.redTNT > maxTNT || baseConfig.blueTNT > maxTNT)
+        // 超出最大 TNT 上限时跳过。
+        if (baseConfiguration.redTnt > g_appState.maxTnt || baseConfiguration.blueTnt > g_appState.maxTnt)
         {
             continue;
         }
 
-        // 执行 Y 坐标判断逻辑
-        if (calculatorConfig.specifiesYPosition)
+        // 在指定 Y 模式下，要求轨迹刚好穿过目标平面。
+        if (g_appState.calculatorSettings.specifiesYPosition)
         {
-            // 多模拟 1gt 以判断珍珠是否落地
-            const std::vector<Simulate> results = simulatePearl(baseConfig, gameTick + 1);
+            const std::vector<SimulationPoint> trajectory = simulatePearlTrajectory(baseConfiguration, gameTick + 1);
+            const bool crossesTargetPlane =
+                trajectory[gameTick].position.y > g_appState.targetYPosition &&
+                trajectory[gameTick + 1].position.y <= g_appState.targetYPosition;
 
-            // 检查逻辑：
-            // 第 gameTick 时：Y 坐标还在目标之上
-            // 第 gameTick + 1 时：Y 坐标已经到达或穿过目标
-            bool isLastTickAbove = (results[gameTick].Position.Y > targetYPosition &&
-                                    results[gameTick + 1].Position.Y <= targetYPosition);
-
-            if (!isLastTickAbove) {
+            if (!crossesTargetPlane)
+            {
                 continue;
             }
-            // 判定成功：gameTick 就是珍珠穿过平面那一刻前的最后一个有效位置
         }
 
-        // 局部搜索
-        for (int r = std::max(0, baseConfig.redTNT - 5); r <= baseConfig.redTNT + 5; ++r)
+        // 在理论解附近做局部搜索，补偿离散 TNT 数量误差。
+        for (int redTnt = std::max(0, baseConfiguration.redTnt - 5); redTnt <= baseConfiguration.redTnt + 5; ++redTnt)
         {
-            for (int b = std::max(0, baseConfig.blueTNT - 5); b <= baseConfig.blueTNT + 5; ++b)
+            for (int blueTnt = std::max(0, baseConfiguration.blueTnt - 5); blueTnt <= baseConfiguration.blueTnt + 5; ++
+                 blueTnt)
             {
-                Configuration currentTry = {r, b, baseConfig.direction};
-                // 使用判定成功的这个 gameTick 来计算水平偏移
-                const double currentOffset = offset(destination, currentTry, gameTick);
+                const TntConfiguration currentConfiguration = {redTnt, blueTnt, baseConfiguration.direction};
+                const double currentOffset = calculateLandingOffset(destination, currentConfiguration, gameTick);
 
-                // 1. currentOffset >= 0 是为了排除模拟失败的错误解
-                // 2. 如果开启了 specifiesYPosition，则使用更宽容的误差检查
-                bool isValid;
-                if (calculatorConfig.specifiesYPosition) {
-                    isValid = (currentOffset >= 0 && currentOffset < 150.0);
-                } else {
-                    isValid = (currentOffset >= 0 && currentOffset < 10.0);
+                bool isValidCandidate = false;
+
+                // 指定 Y 模式下沿用原本更宽松的水平误差判断。
+                if (g_appState.calculatorSettings.specifiesYPosition)
+                {
+                    isValidCandidate = currentOffset >= 0.0 && currentOffset < 150.0;
+                }
+                else
+                {
+                    isValidCandidate = currentOffset >= 0.0 && currentOffset < 10.0;
                 }
 
-                if (isValid)
+                if (isValidCandidate)
                 {
-                    candidates.push_back({currentOffset, currentTry, gameTick});
+                    candidates.push_back({currentOffset, currentConfiguration, gameTick});
                 }
             }
         }
 
-        // 多重采样
+        // 保留原有的多重采样提前停止策略。
         if (!candidates.empty())
         {
-            if (additional >= 100) break;
-            additional++;
+            if (additionalSamples >= 100)
+            {
+                break;
+            }
+
+            additionalSamples++;
         }
     }
 
-    // 排序算法
-    if (calculatorConfig.accuracyPriority)
+    // 按配置要求决定排序优先级。
+    if (g_appState.calculatorSettings.accuracyPriority)
     {
-        // 优先准度 (landingOffset) -> 其次速度 (arriveGameTick)
-        std::ranges::sort(candidates, [](const Plan& a, const Plan& b) {
-            // 防止浮点数精度抖动
-            if (std::abs(a.landingOffset - b.landingOffset) > 1e-9) {
-                return a.landingOffset < b.landingOffset;
+        std::ranges::sort(candidates, [](const LaunchPlan& left, const LaunchPlan& right)
+        {
+            if (std::abs(left.landingOffset - right.landingOffset) > 1e-9)
+            {
+                return left.landingOffset < right.landingOffset;
             }
-            // 准度相同时，耗时短的优先
-            return a.arriveGameTick < b.arriveGameTick;
+
+            return left.arrivalGameTick < right.arrivalGameTick;
         });
     }
     else
     {
-        // 优先速度 (arriveGameTick) -> 其次准度 (landingOffset)
-        std::ranges::sort(candidates, [](const Plan& a, const Plan& b) {
-            if (a.arriveGameTick != b.arriveGameTick) {
-                return a.arriveGameTick < b.arriveGameTick;
+        std::ranges::sort(candidates, [](const LaunchPlan& left, const LaunchPlan& right)
+        {
+            if (left.arrivalGameTick != right.arrivalGameTick)
+            {
+                return left.arrivalGameTick < right.arrivalGameTick;
             }
-            // 速度相同时，准度高的优先
-            return a.landingOffset < b.landingOffset;
+
+            return left.landingOffset < right.landingOffset;
         });
     }
 
-    // 返回候选结果
     return candidates;
 }

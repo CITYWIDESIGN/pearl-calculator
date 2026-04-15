@@ -2,131 +2,124 @@
 // Created by cT on 2026/4/11.
 //
 
-
 #include "assignTNT.h"
+
+#include <cmath>
 
 #include "../data.h"
 
-enum class Direction
+namespace
 {
-    North,
-    South,
-    East,
-    West
-};
+    enum class LaunchDirection
+    {
+        North,
+        South,
+        East,
+        West
+    };
 
-// 用来描述方向方案
-struct Candidate
+    struct DirectionCandidate
+    {
+        LaunchDirection direction;
+        double weight;
+        double primaryTntCount;
+        double secondaryTntCount;
+        const char* primarySlotName;
+        const char* secondarySlotName;
+    };
+}
+
+TntConfiguration assignTntConfiguration(const BarrelLayout& layout)
 {
-    // 方向
-    Direction dir;
-    // 该方向的总推力
-    double weight;
-    // 两组TNT的数量
-    double valA, valB;
-
-    // 角A与角B的名字
-    const char* nameA;
-    const char* nameB;
-};
-
-Configuration assignTNT(const Layout& layout)
-{
-    // 构造四个方向的候选方案
-    const Candidate candidates[] = {
-        // 北方向
+    // 构造四个方向的候选方案。
+    const DirectionCandidate candidates[] = {
         {
-            Direction::North,
-            layout.SouthEast + layout.SouthWest,
-            layout.SouthEast, layout.SouthWest,
-            "SouthEast", "SouthWest"
+            LaunchDirection::North,
+            layout.southEast + layout.southWest,
+            layout.southEast,
+            layout.southWest,
+            "SouthEast",
+            "SouthWest"
         },
-
-        // 南方向
         {
-            Direction::South,
-            layout.NorthEast + layout.NorthWest,
-            layout.NorthEast, layout.NorthWest,
-            "NorthEast", "NorthWest"
+            LaunchDirection::South,
+            layout.northEast + layout.northWest,
+            layout.northEast,
+            layout.northWest,
+            "NorthEast",
+            "NorthWest"
         },
-
-        // 西方向
         {
-            Direction::West,
-            layout.NorthEast + layout.SouthEast,
-            layout.NorthEast, layout.SouthEast,
-            "NorthEast", "SouthEast"
+            LaunchDirection::West,
+            layout.northEast + layout.southEast,
+            layout.northEast,
+            layout.southEast,
+            "NorthEast",
+            "SouthEast"
         },
-
-        // 东方向
         {
-            Direction::East,
-            layout.NorthWest + layout.SouthWest,
-            layout.NorthWest, layout.SouthWest,
-            "NorthWest", "SouthWest"
+            LaunchDirection::East,
+            layout.northWest + layout.southWest,
+            layout.northWest,
+            layout.southWest,
+            "NorthWest",
+            "SouthWest"
         }
     };
 
-    // 找出推力最大的方向
-    const Candidate* best = &candidates[0];
-
-    for (const auto& c : candidates)
+    // 选出总推力最大的方向。
+    const DirectionCandidate* bestCandidate = &candidates[0];
+    for (const auto& candidate : candidates)
     {
-        if (c.weight > best->weight)
+        if (candidate.weight > bestCandidate->weight)
         {
-            best = &c;
+            bestCandidate = &candidate;
         }
     }
 
-    // 据默认方向分配红/蓝 TNT
-    int redTNT = 0, blueTNT = 0;
+    int redTntCount = 0;
+    int blueTntCount = 0;
 
-    // 情况1：A角是默认红色
-    if (best->nameA == defaultRedTNTDirection)
+    // 按默认红蓝 TNT 朝向映射最终数量。
+    if (bestCandidate->primarySlotName == g_appState.defaultRedTntDirection)
     {
-        redTNT = std::round(best->valA);
-        blueTNT = std::round(best->valB);
+        redTntCount = std::round(bestCandidate->primaryTntCount);
+        blueTntCount = std::round(bestCandidate->secondaryTntCount);
     }
-
-    // 情况2：B角是默认红色
-    else if (best->nameB == defaultRedTNTDirection)
-
+    else if (bestCandidate->secondarySlotName == g_appState.defaultRedTntDirection)
     {
-        redTNT = std::round(best->valB);
-        blueTNT = std::round(best->valA);
+        redTntCount = std::round(bestCandidate->secondaryTntCount);
+        blueTntCount = std::round(bestCandidate->primaryTntCount);
     }
-
-    // 情况3：A角是默认蓝色
-    else if (best->nameA == defaultBlueTNTDirection)
-
+    else if (bestCandidate->primarySlotName == g_appState.defaultBlueTntDirection)
     {
-        blueTNT = std::round(best->valA);
-        redTNT = std::round(best->valB);
+        blueTntCount = std::round(bestCandidate->primaryTntCount);
+        redTntCount = std::round(bestCandidate->secondaryTntCount);
     }
-
-    // 情况4：B角是默认蓝色
     else
-
     {
-        blueTNT = std::round(best->valB);
-        redTNT = std::round(best->valA);
+        blueTntCount = std::round(bestCandidate->secondaryTntCount);
+        redTntCount = std::round(bestCandidate->primaryTntCount);
     }
 
-    // 转回字符串
     std::string direction;
 
-    switch (best->dir)
+    // 将枚举方向转换回配置字符串。
+    switch (bestCandidate->direction)
     {
-    case Direction::North: direction = "North";
+    case LaunchDirection::North:
+        direction = "North";
         break;
-    case Direction::South: direction = "South";
+    case LaunchDirection::South:
+        direction = "South";
         break;
-    case Direction::East: direction = "East";
+    case LaunchDirection::East:
+        direction = "East";
         break;
-    case Direction::West: direction = "West";
+    case LaunchDirection::West:
+        direction = "West";
         break;
     }
 
-    // 返回结果
-    return {redTNT, blueTNT, direction};
+    return {redTntCount, blueTntCount, direction};
 }

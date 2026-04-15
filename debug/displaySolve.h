@@ -4,8 +4,9 @@
 
 #ifndef PEARLCALCULATOR_DISPLAYSOLVE_H
 #define PEARLCALCULATOR_DISPLAYSOLVE_H
+
 #include "../data.h"
 
-void displaySolve(const std::vector<Plan>& candidates, vector2 destination);
+void displaySolutions(const std::vector<LaunchPlan>& candidates, Vector2 destination);
 
-#endif //PEARLCALCULATOR_DISPLAYSOLVE_H
+#endif // PEARLCALCULATOR_DISPLAYSOLVE_H

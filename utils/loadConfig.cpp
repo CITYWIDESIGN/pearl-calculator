@@ -3,28 +3,29 @@
 //
 
 #include "loadConfig.h"
+
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+
+#include "../data.h"
 #include "../nlohmann/json.hpp"
 #include "createConfig.h"
-#include "../data.h"
-
-#include <iostream>
-#include <fstream>
-#include <filesystem>
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-void loadConfig(const std::string& path)
+void loadConfiguration(const std::string& path)
 {
-    std::string fullPath = path + "/config.json";
+    const std::string fullPath = path + "/config.json";
 
-    // 检查文件是否存在
+    // 在配置缺失时先生成默认文件。
     if (!fs::exists(fullPath))
     {
-        createConfig(path);
+        createDefaultConfiguration(path);
     }
 
-    // 尝试打开文件
+    // 打开配置文件。
     std::ifstream file(fullPath);
     if (!file.is_open())
     {
@@ -34,61 +35,59 @@ void loadConfig(const std::string& path)
 
     try
     {
-        json j;
-        file >> j;
+        json configJson;
+        file >> configJson;
 
-        // 给全局变量赋值
-        version = j["Version"];
-        maxTNT = j["MaxTNT"];
+        // 读取基础配置。
+        g_appState.version = configJson["Version"];
+        g_appState.maxTnt = configJson["MaxTNT"];
 
-        // TNT 位置赋值
-        tntPosition.NorthEast = {
-            j["NorthEastTNT"]["X"].get<double>(),
-            j["NorthEastTNT"]["Y"].get<double>(),
-            j["NorthEastTNT"]["Z"].get<double>()
+        // 读取 TNT 位置。
+        g_appState.tntPositions.northEast = {
+            configJson["NorthEastTNT"]["X"].get<double>(),
+            configJson["NorthEastTNT"]["Y"].get<double>(),
+            configJson["NorthEastTNT"]["Z"].get<double>()
         };
-        tntPosition.NorthWest = {
-            j["NorthWestTNT"]["X"].get<double>(),
-            j["NorthWestTNT"]["Y"].get<double>(),
-            j["NorthWestTNT"]["Z"].get<double>()
+        g_appState.tntPositions.northWest = {
+            configJson["NorthWestTNT"]["X"].get<double>(),
+            configJson["NorthWestTNT"]["Y"].get<double>(),
+            configJson["NorthWestTNT"]["Z"].get<double>()
         };
-        tntPosition.SouthEast = {
-            j["SouthEastTNT"]["X"].get<double>(),
-            j["SouthEastTNT"]["Y"].get<double>(),
-            j["SouthEastTNT"]["Z"].get<double>()
+        g_appState.tntPositions.southEast = {
+            configJson["SouthEastTNT"]["X"].get<double>(),
+            configJson["SouthEastTNT"]["Y"].get<double>(),
+            configJson["SouthEastTNT"]["Z"].get<double>()
         };
-        tntPosition.SouthWest = {
-            j["SouthWestTNT"]["X"].get<double>(),
-            j["SouthWestTNT"]["Y"].get<double>(),
-            j["SouthWestTNT"]["Z"].get<double>()
-        };
-
-        // 珍珠偏移
-        pearlOffset.X = j["Offset"]["X"].get<double>();
-        pearlOffset.Z = j["Offset"]["Z"].get<double>();
-
-        // 珍珠信息
-        pearl.Position = {
-            j["Pearl"]["Position"]["X"].get<double>(),
-            j["Pearl"]["Position"]["Y"].get<double>(),
-            j["Pearl"]["Position"]["Z"].get<double>()
-        };
-        pearl.Motion = {
-            j["Pearl"]["Motion"]["X"].get<double>(),
-            j["Pearl"]["Motion"]["Y"].get<double>(),
-            j["Pearl"]["Motion"]["Z"].get<double>()
+        g_appState.tntPositions.southWest = {
+            configJson["SouthWestTNT"]["X"].get<double>(),
+            configJson["SouthWestTNT"]["Y"].get<double>(),
+            configJson["SouthWestTNT"]["Z"].get<double>()
         };
 
-        // 默认方向
-        defaultRedTNTDirection = j["DefaultRedTNTDirection"].get<std::string>();
-        defaultBlueTNTDirection = j["DefaultBlueTNTDirection"].get<std::string>();
+        // 读取珍珠偏移。
+        g_appState.pearlOffset.x = configJson["Offset"]["X"].get<double>();
+        g_appState.pearlOffset.z = configJson["Offset"]["Z"].get<double>();
 
-        // ROM模板赋值
-        redSlots = j["RedSlots"].get<std::vector<int>>();
-        blueSlots = j["BlueSlots"].get<std::vector<int>>();
+        // 读取珍珠初始状态。
+        g_appState.pearl.position = {
+            configJson["Pearl"]["Position"]["X"].get<double>(),
+            configJson["Pearl"]["Position"]["Y"].get<double>(),
+            configJson["Pearl"]["Position"]["Z"].get<double>()
+        };
+        g_appState.pearl.motion = {
+            configJson["Pearl"]["Motion"]["X"].get<double>(),
+            configJson["Pearl"]["Motion"]["Y"].get<double>(),
+            configJson["Pearl"]["Motion"]["Z"].get<double>()
+        };
+
+        // 读取默认方向与 ROM 槽位配置。
+        g_appState.defaultRedTntDirection = configJson["DefaultRedTNTDirection"].get<std::string>();
+        g_appState.defaultBlueTntDirection = configJson["DefaultBlueTNTDirection"].get<std::string>();
+        g_appState.redSlots = configJson["RedSlots"].get<std::vector<int>>();
+        g_appState.blueSlots = configJson["BlueSlots"].get<std::vector<int>>();
     }
-    catch (const std::exception& e)
+    catch (const std::exception& exception)
     {
-        std::cerr << "Error: Failed to read configuration." << e.what() << std::endl;
+        std::cerr << "Error: Failed to read configuration." << exception.what() << std::endl;
     }
 }

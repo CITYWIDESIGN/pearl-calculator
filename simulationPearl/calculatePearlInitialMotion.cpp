@@ -1,94 +1,104 @@
 //
 // Created by cT on 2026/4/11.
 //
-#include <string>
-#include <iostream>
 
 #include "calculatePearlInitialMotion.h"
-#include "../utils/calculateSingleTNTContribution.h"
+
+#include <string>
+
 #include "../data.h"
+#include "../utils/calculateSingleTNTContribution.h"
 
-// 分配不同方向下红蓝TNT的坐标
-static void
-distributeTNTPosition(const std::string& direction, vector3& redPos, vector3& bluePos)
+namespace
 {
-    vector3 positionA{}, positionB{};
-    std::string positionAName, positionBName;
+void distributeTntPositions(const std::string& direction, Vector3& redTntPosition, Vector3& blueTntPosition)
+{
+    Vector3 primaryPosition{};
+    Vector3 secondaryPosition{};
+    std::string primaryPositionName;
+    std::string secondaryPositionName;
 
-    // 根据方向分配TNT
+    // 根据发射方向选择两侧 TNT 槽位。
     if (direction == "North")
     {
-        positionA = tntPosition.SouthEast;
-        positionB = tntPosition.SouthWest;
-        positionAName = "SouthEast";
-        positionBName = "SouthWest";
+        primaryPosition = g_appState.tntPositions.southEast;
+        secondaryPosition = g_appState.tntPositions.southWest;
+        primaryPositionName = "SouthEast";
+        secondaryPositionName = "SouthWest";
     }
     else if (direction == "South")
     {
-        positionA = tntPosition.NorthEast;
-        positionB = tntPosition.NorthWest;
-        positionAName = "NorthEast";
-        positionBName = "NorthWest";
+        primaryPosition = g_appState.tntPositions.northEast;
+        secondaryPosition = g_appState.tntPositions.northWest;
+        primaryPositionName = "NorthEast";
+        secondaryPositionName = "NorthWest";
     }
     else if (direction == "West")
     {
-        positionA = tntPosition.NorthEast;
-        positionB = tntPosition.SouthEast;
-        positionAName = "NorthEast";
-        positionBName = "SouthEast";
+        primaryPosition = g_appState.tntPositions.northEast;
+        secondaryPosition = g_appState.tntPositions.southEast;
+        primaryPositionName = "NorthEast";
+        secondaryPositionName = "SouthEast";
     }
     else if (direction == "East")
     {
-        positionA = tntPosition.NorthWest;
-        positionB = tntPosition.SouthWest;
-        positionAName = "NorthWest";
-        positionBName = "SouthWest";
+        primaryPosition = g_appState.tntPositions.northWest;
+        secondaryPosition = g_appState.tntPositions.southWest;
+        primaryPositionName = "NorthWest";
+        secondaryPositionName = "SouthWest";
     }
-    else return;
+    else
+    {
+        return;
+    }
 
-    // 分配红蓝TNT坐标
-    if (positionAName == defaultRedTNTDirection)
+    // 按默认红蓝槽位方向分配具体 TNT 位置。
+    if (primaryPositionName == g_appState.defaultRedTntDirection)
     {
-        redPos = positionA;
-        bluePos = positionB;
+        redTntPosition = primaryPosition;
+        blueTntPosition = secondaryPosition;
     }
-    else if (positionBName == defaultRedTNTDirection)
+    else if (secondaryPositionName == g_appState.defaultRedTntDirection)
     {
-        redPos = positionB;
-        bluePos = positionA;
+        redTntPosition = secondaryPosition;
+        blueTntPosition = primaryPosition;
     }
-    else if (positionAName == defaultBlueTNTDirection)
+    else if (primaryPositionName == g_appState.defaultBlueTntDirection)
     {
-        redPos = positionB;
-        bluePos = positionA;
+        redTntPosition = secondaryPosition;
+        blueTntPosition = primaryPosition;
     }
-    else if (positionBName == defaultBlueTNTDirection)
+    else if (secondaryPositionName == g_appState.defaultBlueTntDirection)
     {
-        redPos = positionA;
-        bluePos = positionB;
+        redTntPosition = primaryPosition;
+        blueTntPosition = secondaryPosition;
     }
 }
+}
 
-// 计算珍珠初始（第0gt）的 Motion
-vector3 calculatePearlInitialMotion(const int redTNTCount, const int blueTNTCount, const std::string& direction)
+Vector3 calculateInitialPearlMotion(
+    const int redTntCount,
+    const int blueTntCount,
+    const std::string& direction
+)
 {
-    // 如果没有 TNT 助推 直接返回珍珠原 Motion
-    if (redTNTCount == 0 && blueTNTCount == 0)
+    // 没有 TNT 助推时，直接返回原始速度。
+    if (redTntCount == 0 && blueTntCount == 0)
     {
-        return pearl.Motion;
+        return g_appState.pearl.motion;
     }
 
-    // 声明红蓝TNT的坐标变量
-    vector3 redTNTPosition{}, blueTNTPosition{};
+    Vector3 redTntPosition{};
+    Vector3 blueTntPosition{};
 
-    // 调用 distributeTNTPosition 自动分配红蓝 TNT 坐标
-    distributeTNTPosition(direction, redTNTPosition, blueTNTPosition);
+    // 根据方向计算红蓝 TNT 的实际坐标。
+    distributeTntPositions(direction, redTntPosition, blueTntPosition);
 
-    // 计算红色 TNT 提供的 Motion
-    const vector3 redTNTMotion = calculateSingleTNTContribution(redTNTPosition, pearl.Position) * redTNTCount;
-    // 计算蓝色 TNT 提供的 Motion
-    const vector3 blueTNTMotion = calculateSingleTNTContribution(blueTNTPosition, pearl.Position) * blueTNTCount;
+    // 计算红蓝 TNT 对珍珠的初始推力。
+    const Vector3 redTntMotion =
+        calculateSingleTntContribution(redTntPosition, g_appState.pearl.position) * redTntCount;
+    const Vector3 blueTntMotion =
+        calculateSingleTntContribution(blueTntPosition, g_appState.pearl.position) * blueTntCount;
 
-    // 返回时加上珍珠原本的 Motion
-    return redTNTMotion + blueTNTMotion + pearl.Motion;
+    return redTntMotion + blueTntMotion + g_appState.pearl.motion;
 }

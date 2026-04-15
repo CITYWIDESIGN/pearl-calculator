@@ -4,8 +4,9 @@
 
 #ifndef PEARLCALCULATOR_LOADCONFIG_H
 #define PEARLCALCULATOR_LOADCONFIG_H
+
 #include <string>
 
-void loadConfig(const std::string& path);
+void loadConfiguration(const std::string& path);
 
-#endif //PEARLCALCULATOR_LOADCONFIG_H
+#endif // PEARLCALCULATOR_LOADCONFIG_H
