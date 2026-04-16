@@ -47,21 +47,30 @@ namespace {
     }
 
     bool handleTuiListMouseSelection(TuiState &state, const Mouse &mouse) {
-        if (state.rightPanelMode != TuiRightPanelMode::Plans || state.plans.empty()) {
-            return false;
-        }
+        Box currentBox = (state.rightPanelMode == TuiRightPanelMode::Plans)
+                             ? state.planListBox
+                             : state.trajectoryListBox;
 
-        if (!isMouseInsideBox(state.planListBox, mouse)) {
-            return false;
-        }
+        if (!isMouseInsideBox(currentBox, mouse)) return false;
 
-        const int rowIndex = mouse.y - state.planListBox.y_min;
-        const int absoluteIndex = state.planScrollOffset + rowIndex;
-        if (absoluteIndex < 0 || absoluteIndex >= static_cast<int>(state.plans.size())) {
-            return false;
-        }
+        // 扣除 2 行表头高度
+        const int headerHeight = 2;
+        const int rowIndex = mouse.y - currentBox.y_min - headerHeight;
 
-        selectTuiPlanByIndex(state, absoluteIndex);
+        if (rowIndex < 0) return true; // 点在表头上
+
+        if (state.rightPanelMode == TuiRightPanelMode::Plans) {
+            const int absoluteIndex = state.planScrollOffset + rowIndex;
+            if (absoluteIndex >= 0 && absoluteIndex < (int) state.plans.size()) {
+                selectTuiPlanByIndex(state, absoluteIndex);
+            }
+        } else {
+            // 轨迹列表通常只用于查看，如果需要点击高亮也可以加上逻辑
+            const int absoluteIndex = state.trajectoryScrollOffset + rowIndex;
+            if (absoluteIndex >= 0 && absoluteIndex < (int) state.trajectory.size()) {
+                state.highlightedTrajectoryIndex = absoluteIndex;
+            }
+        }
         return true;
     }
 
@@ -332,10 +341,10 @@ namespace {
         });
 
         return CatchEvent(app, [&state, &screen,
-                              inputX, inputY, inputZ, inputRedTnt, inputBlueTnt, inputDirection,computeButton, leftPanel
-                              , focusTrap]
+                              inputX, inputY, inputZ, inputRedTnt, inputBlueTnt, inputDirection, computeButton,
+                              leftPanel,
+                              focusTrap]
                   (Event event) {
-
                               if (event.is_mouse()) {
                                   g_lastInputMode = 1;
                                   if (event.mouse().motion == Mouse::Moved) return false;
@@ -363,11 +372,6 @@ namespace {
                                                          inputDirection->Focused();
 
                                   if (event == Event::Return) {
-                                      bool anyInputFocused =
-                                              inputX->Focused() || inputY->Focused() || inputZ->Focused() ||
-                                              inputRedTnt->Focused() || inputBlueTnt->Focused() || inputDirection->
-                                              Focused();
-
                                       if (anyInputFocused) {
                                           focusTrap->TakeFocus();
                                           return true;
@@ -386,18 +390,18 @@ namespace {
                                       if (mouse.button == Mouse::WheelDown) {
                                           if (!isListMouseEvent) return false;
                                           if (state.rightPanelMode == TuiRightPanelMode::Plans)
-                                              pageTuiPlanList(
-                                                  state, 5);
-                                          else pageTuiTrajectoryList(state, -5);
+                                              pageTuiPlanList(state, 5);
+                                          else
+                                              pageTuiTrajectoryList(state, 5); // 修复：向下滚为正偏移
                                           return true;
                                       }
 
                                       if (mouse.button == Mouse::WheelUp) {
                                           if (!isListMouseEvent) return false;
                                           if (state.rightPanelMode == TuiRightPanelMode::Plans)
-                                              pageTuiPlanList(
-                                                  state, -5);
-                                          else pageTuiTrajectoryList(state, -5);
+                                              pageTuiPlanList(state, -5);
+                                          else
+                                              pageTuiTrajectoryList(state, -5); // 修复：向上滚为负偏移
                                           return true;
                                       }
 

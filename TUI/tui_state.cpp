@@ -12,56 +12,47 @@
 #include "../data.h"
 #include "../simulationPearl/simulatePearl.h"
 
-namespace
-{
+constexpr int COL_WIDTHS[] = {6, 18, 11, 8, 8, 10};
+constexpr int POI_WIDTHS[] = {11, 12, 12, 12, 12, 12, 12};
+
+namespace {
     constexpr int kListVisibleRows = 22;
 
-    std::string formatDouble(const double value, const int precision)
-    {
+    std::string formatDouble(const double value, const int precision) {
         std::ostringstream stream;
         stream << std::fixed << std::setprecision(precision) << value;
         return stream.str();
     }
 
-    bool parseCoordinate(const std::string& text, double& value)
-    {
-        try
-        {
+    bool parseCoordinate(const std::string &text, double &value) {
+        try {
             std::size_t parsedLength = 0;
             value = std::stod(text, &parsedLength);
             return parsedLength == text.size();
-        }
-        catch (...)
-        {
+        } catch (...) {
             return false;
         }
     }
 
-    bool parseIntegerValue(const std::string& text, int& value)
-    {
-        try
-        {
+    bool parseIntegerValue(const std::string &text, int &value) {
+        try {
             std::size_t parsedLength = 0;
             value = std::stoi(text, &parsedLength);
             return parsedLength == text.size();
-        }
-        catch (...)
-        {
+        } catch (...) {
             return false;
         }
     }
 
-    bool isValidDirectionText(const std::string& direction)
-    {
+    bool isValidDirectionText(const std::string &direction) {
         return direction == "North" ||
-            direction == "South" ||
-            direction == "East" ||
-            direction == "West";
+               direction == "South" ||
+               direction == "East" ||
+               direction == "West";
     }
 }
 
-void initializeTuiResultEntries(TuiState& state)
-{
+void initializeTuiResultEntries(TuiState &state) {
     state.planEntries = {"暂无计算结果。请先输入坐标并执行计算。"};
     state.trajectoryEntries = {"暂无模拟轨迹。请先选择方案并开始模拟。"};
     state.highlightedPlanIndex = 0;
@@ -71,26 +62,23 @@ void initializeTuiResultEntries(TuiState& state)
     state.selectedPlanIndex.reset();
 }
 
-void rebuildTuiPlanEntries(TuiState& state)
-{
+void rebuildTuiPlanEntries(TuiState &state) {
     state.planEntries.clear();
 
-    // 将求解结果整理成等宽列，避免终端在窄宽度下出现视觉抖动。
-    for (std::size_t index = 0; index < state.plans.size(); ++index)
-    {
-        const LaunchPlan& plan = state.plans[index];
-        std::ostringstream stream;
-        stream << "# " << std::setw(3) << index + 1
-            << " | GT " << std::setw(4) << plan.arrivalGameTick
-            << " | R " << std::setw(4) << plan.configuration.redTnt
-            << " | B " << std::setw(4) << plan.configuration.blueTnt
-            << " | " << std::setw(5) << plan.configuration.direction
-            << " | Off " << std::setw(9) << std::fixed << std::setprecision(4) << plan.landingOffset;
-        state.planEntries.push_back(stream.str());
+    for (std::size_t i = 0; i < state.plans.size(); ++i) {
+        const auto &p = state.plans[i];
+        std::ostringstream oss;
+
+        oss << std::left << std::setw(COL_WIDTHS[0]) << (i + 1)
+            << std::left << std::setw(COL_WIDTHS[1]) << std::fixed << std::setprecision(5) << p.landingOffset
+            << std::left << std::setw(COL_WIDTHS[2]) << p.arrivalGameTick
+            << std::left << std::setw(COL_WIDTHS[3]) << p.configuration.redTnt
+            << std::left << std::setw(COL_WIDTHS[4]) << p.configuration.blueTnt
+            << " " << p.configuration.direction;
+        state.planEntries.push_back(oss.str());
     }
 
-    if (state.planEntries.empty())
-    {
+    if (state.planEntries.empty()) {
         state.planEntries.push_back("暂无计算结果。请先输入坐标并执行计算。");
         state.highlightedPlanIndex = 0;
         state.planScrollOffset = 0;
@@ -104,8 +92,7 @@ void rebuildTuiPlanEntries(TuiState& state)
         static_cast<int>(state.planEntries.size()) - 1
     );
 
-    if (!state.selectedPlanIndex.has_value())
-    {
+    if (!state.selectedPlanIndex.has_value()) {
         state.selectedPlanIndex = 0;
     }
 
@@ -116,27 +103,23 @@ void rebuildTuiPlanEntries(TuiState& state)
     );
 }
 
-void rebuildTuiTrajectoryEntries(TuiState& state)
-{
+void rebuildTuiTrajectoryEntries(TuiState &state) {
     state.trajectoryEntries.clear();
 
-    // 轨迹文本也维持统一列宽，方便右侧列表稳定滚动和浏览。
-    for (const auto& point : state.trajectory)
-    {
-        std::ostringstream stream;
-        stream << "GT " << std::setw(4) << point.gameTick
-            << "  P(" << formatDouble(point.position.x, 3)
-            << ", " << formatDouble(point.position.y, 3)
-            << ", " << formatDouble(point.position.z, 3)
-            << ")  M(" << formatDouble(point.motion.x, 4)
-            << ", " << formatDouble(point.motion.y, 4)
-            << ", " << formatDouble(point.motion.z, 4)
-            << ")";
-        state.trajectoryEntries.push_back(stream.str());
+    for (const auto& pt : state.trajectory) {
+        std::ostringstream oss;
+
+        oss << std::left << std::setw(POI_WIDTHS[0]) << pt.gameTick
+            << std::left << std::setw(POI_WIDTHS[1]) << std::fixed << std::setprecision(5) << pt.position.x
+            << std::left << std::setw(POI_WIDTHS[2]) << pt.position.y
+            << std::left << std::setw(POI_WIDTHS[3]) << pt.position.z
+            << std::left << std::setw(POI_WIDTHS[4]) << pt.motion.x
+            << std::left << std::setw(POI_WIDTHS[5]) << pt.motion.y
+            << " " << pt.motion.z;
+        state.trajectoryEntries.push_back(oss.str());
     }
 
-    if (state.trajectoryEntries.empty())
-    {
+    if (state.trajectoryEntries.empty()) {
         state.trajectoryEntries.push_back("暂无模拟轨迹。请先选择方案并开始模拟。");
         state.highlightedTrajectoryIndex = 0;
         state.trajectoryScrollOffset = 0;
@@ -155,26 +138,22 @@ void rebuildTuiTrajectoryEntries(TuiState& state)
     );
 }
 
-bool applyTuiCoordinateConfiguration(TuiState& state)
-{
+bool applyTuiCoordinateConfiguration(TuiState &state) {
     double destinationX = 0.0;
     double destinationY = 0.0;
     double destinationZ = 0.0;
 
-    if (!parseCoordinate(state.coordinates.x, destinationX))
-    {
+    if (!parseCoordinate(state.coordinates.x, destinationX)) {
         state.statusMessage = "X 坐标格式无效。";
         return false;
     }
 
-    if (state.coordinates.showYField && !parseCoordinate(state.coordinates.y, destinationY))
-    {
+    if (state.coordinates.showYField && !parseCoordinate(state.coordinates.y, destinationY)) {
         state.statusMessage = "Y 坐标格式无效。";
         return false;
     }
 
-    if (!parseCoordinate(state.coordinates.z, destinationZ))
-    {
+    if (!parseCoordinate(state.coordinates.z, destinationZ)) {
         state.statusMessage = "Z 坐标格式无效。";
         return false;
     }
@@ -187,10 +166,8 @@ bool applyTuiCoordinateConfiguration(TuiState& state)
     return true;
 }
 
-void computeTuiPlans(TuiState& state)
-{
-    if (!applyTuiCoordinateConfiguration(state))
-    {
+void computeTuiPlans(TuiState &state) {
+    if (!applyTuiCoordinateConfiguration(state)) {
         return;
     }
 
@@ -206,8 +183,7 @@ void computeTuiPlans(TuiState& state)
     state.plans = solveLaunchPlans(destination2D);
     rebuildTuiPlanEntries(state);
 
-    if (state.plans.empty())
-    {
+    if (state.plans.empty()) {
         state.statusMessage = "没有找到可用方案，请检查坐标或模式。";
         return;
     }
@@ -218,34 +194,30 @@ void computeTuiPlans(TuiState& state)
     state.statusMessage = "已生成方案列表。左键或回车选择，按 S 开始模拟。";
 }
 
-void selectTuiHighlightedPlan(TuiState& state)
-{
-    if (state.plans.empty())
-    {
+void selectTuiHighlightedPlan(TuiState &state) {
+    if (state.plans.empty()) {
         state.statusMessage = "当前没有可选方案。";
         return;
     }
 
     state.selectedPlanIndex = state.highlightedPlanIndex;
 
-    const LaunchPlan& plan = state.plans[*state.selectedPlanIndex];
+    const LaunchPlan &plan = state.plans[*state.selectedPlanIndex];
     state.coordinates.redTnt = std::to_string(plan.configuration.redTnt);
     state.coordinates.blueTnt = std::to_string(plan.configuration.blueTnt);
     state.coordinates.direction = plan.configuration.direction;
     std::ostringstream stream;
     stream << "已选中方案 #" << *state.selectedPlanIndex + 1
-        << "  R " << plan.configuration.redTnt
-        << "  B " << plan.configuration.blueTnt
-        << "  " << plan.configuration.direction
-        << "  GT " << plan.arrivalGameTick
-        << "。按 S 开始模拟。";
+            << "  R " << plan.configuration.redTnt
+            << "  B " << plan.configuration.blueTnt
+            << "  " << plan.configuration.direction
+            << "  GT " << plan.arrivalGameTick
+            << "。按 S 开始模拟。";
     state.statusMessage = stream.str();
 }
 
-void selectTuiPlanByIndex(TuiState& state, const int index)
-{
-    if (state.plans.empty())
-    {
+void selectTuiPlanByIndex(TuiState &state, const int index) {
+    if (state.plans.empty()) {
         state.statusMessage = "当前没有可选方案。";
         return;
     }
@@ -254,32 +226,27 @@ void selectTuiPlanByIndex(TuiState& state, const int index)
     selectTuiHighlightedPlan(state);
 }
 
-void startTuiSimulation(TuiState& state)
-{
+void startTuiSimulation(TuiState &state) {
     int redTntCount = 0;
     int blueTntCount = 0;
 
-    if (!parseIntegerValue(state.coordinates.redTnt, redTntCount) || redTntCount < 0)
-    {
+    if (!parseIntegerValue(state.coordinates.redTnt, redTntCount) || redTntCount < 0) {
         state.statusMessage = "Red TNT 输入无效。";
         return;
     }
 
-    if (!parseIntegerValue(state.coordinates.blueTnt, blueTntCount) || blueTntCount < 0)
-    {
+    if (!parseIntegerValue(state.coordinates.blueTnt, blueTntCount) || blueTntCount < 0) {
         state.statusMessage = "Blue TNT 输入无效。";
         return;
     }
 
-    if (!isValidDirectionText(state.coordinates.direction))
-    {
+    if (!isValidDirectionText(state.coordinates.direction)) {
         state.statusMessage = "方向输入无效，请使用 North/South/East/West。";
         return;
     }
 
     int simulateUntilTick = 80;
-    if (state.selectedPlanIndex.has_value() && !state.plans.empty())
-    {
+    if (state.selectedPlanIndex.has_value() && !state.plans.empty()) {
         simulateUntilTick = state.plans[*state.selectedPlanIndex].arrivalGameTick + 10;
     }
 
@@ -293,8 +260,7 @@ void startTuiSimulation(TuiState& state)
     state.statusMessage = "已切换到珍珠模拟列表。按 E 返回方案列表。";
 }
 
-void resetTuiForm(TuiState& state)
-{
+void resetTuiForm(TuiState &state) {
     state.coordinates = TuiCoordinateForm{};
     state.plans.clear();
     state.planEntries.clear();

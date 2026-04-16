@@ -19,9 +19,10 @@ namespace {
     constexpr int kRightPanelHeight = 26;
     constexpr int kListVisibleRows = 22;
     constexpr int kRightPanelTextWidth = 82;
-    constexpr int kListTextWidth = 76;
     constexpr int kInputRowWidth = 24;
     constexpr int kInputValueWidth = 14;
+    const std::string PLAN_HEADER = "序号   偏移           游戏刻     红TNT    蓝TNT     方向";
+    const std::string TRAJ_HEADER = "游戏刻      X 坐标      Y 坐标      Z 坐标     X Motion    Y Motion    Z Motion";
 
     std::string truncateText(const std::string &text, const std::size_t maxWidth) {
         if (text.size() <= maxWidth) {
@@ -40,47 +41,44 @@ namespace {
         const int highlightedIndex,
         const std::optional<int> selectedIndex,
         const int scrollOffset,
-        Box &listBox
+        Box &listBox,
+        bool isPlanList,
+        bool isTrajList
     ) {
-        const int clampedOffset = std::clamp(
-            scrollOffset,
-            0,
-            std::max(0, static_cast<int>(entries.size()) - kListVisibleRows)
-        );
-        const int endIndex = std::min(
-            static_cast<int>(entries.size()),
-            clampedOffset + kListVisibleRows
-        );
+        const int clampedOffset = std::clamp(scrollOffset, 0,
+                                             std::max(0, static_cast<int>(entries.size()) - kListVisibleRows));
+        const int endIndex = std::min(static_cast<int>(entries.size()), clampedOffset + kListVisibleRows);
 
         Elements rows;
+        int headerHeight = 0;
+
+        // 渲染表头逻辑
+        if (!entries.empty() && entries[0].find("暂无") == std::string::npos) {
+            std::string currentHeader = "";
+            if (isPlanList) currentHeader = PLAN_HEADER;
+            else if (isTrajList) currentHeader = TRAJ_HEADER;
+
+            if (!currentHeader.empty()) {
+                rows.push_back(
+                    hbox({filler() | size(WIDTH, EQUAL, 2), text(currentHeader)}) | color(Color::BlueLight) | bold);
+                rows.push_back(separator() | color(Color::GrayDark));
+                headerHeight = 2;
+            }
+        }
+
+        // 渲染数据
         for (int index = clampedOffset; index < endIndex; ++index) {
-            Element row = hbox({
-                              filler() | size(WIDTH, EQUAL, 2),
-                              text(truncateText(entries[static_cast<std::size_t>(index)], kListTextWidth))
-                          }) | size(WIDTH, EQUAL, kListTextWidth);
-
-            if (selectedIndex.has_value() && selectedIndex.value() == index) {
-                row |= color(Color::GreenLight);
-            } else {
-                row |= color(Color::White);
-            }
-
-            if (highlightedIndex == index) {
-                row |= bgcolor(Color::RGB(12, 28, 36));
-                row |= color(Color::CyanLight);
-                row |= bold;
-            }
-
+            Element row = hbox({filler() | size(WIDTH, EQUAL, 2), text(entries[static_cast<std::size_t>(index)])});
+            if (selectedIndex.has_value() && selectedIndex.value() == index) row |= color(Color::GreenLight);
+            if (highlightedIndex == index) row |= bgcolor(Color::RGB(12, 28, 36)) | color(Color::CyanLight) | bold;
             rows.push_back(row);
         }
 
-        while (static_cast<int>(rows.size()) < kListVisibleRows) {
+        while (static_cast<int>(rows.size()) < kListVisibleRows + headerHeight) {
             rows.push_back(text(" "));
         }
 
-        return vbox(std::move(rows))
-               | reflect(listBox)
-               | size(HEIGHT, EQUAL, kListVisibleRows);
+        return vbox(std::move(rows)) | reflect(listBox) | size(HEIGHT, EQUAL, kListVisibleRows + headerHeight);
     }
 
     Element renderScrollBar(const int totalEntries, const int scrollOffset) {
@@ -188,11 +186,11 @@ Element renderTuiStatusBar(const TuiState &state) {
 
     return hbox({
         (g_lastInputMode == 1)
-        ? text(" MODE: MOUSE ") | color(Color::YellowLight) | bold
-        : text(" MODE: KEYBOARD ") | color(Color::GreenLight) | bold,
-    filler(),
-    text(truncateText(hint, 58)) | color(Color::GrayDark),
-});
+            ? text(" MODE: MOUSE ") | color(Color::YellowLight) | bold
+            : text(" MODE: KEYBOARD ") | color(Color::GreenLight) | bold,
+        filler(),
+        text(truncateText(hint, 58)) | color(Color::GrayDark),
+    });
 }
 
 static Element renderTuiRightPanel(
@@ -202,9 +200,6 @@ static Element renderTuiRightPanel(
 ) {
     const bool showPlans = state.rightPanelMode == TuiRightPanelMode::Plans;
     const std::string title = showPlans ? "[ 计算结果 ]" : "[ 珍珠模拟 ]";
-    const std::string subtitle = showPlans
-                                     ? "滚轮翻页，左键或回车选中方案。"
-                                     : "展示完整飞行轨迹，滚轮翻页浏览。";
 
     const Element listElement = showPlans
                                     ? renderScrollableList(
@@ -212,14 +207,18 @@ static Element renderTuiRightPanel(
                                         state.highlightedPlanIndex,
                                         state.selectedPlanIndex,
                                         state.planScrollOffset,
-                                        planListBox
+                                        planListBox,
+                                        true,
+                                        false
                                     )
                                     : renderScrollableList(
                                         state.trajectoryEntries,
                                         state.highlightedTrajectoryIndex,
                                         std::nullopt,
                                         state.trajectoryScrollOffset,
-                                        trajectoryListBox
+                                        trajectoryListBox,
+                                        false,
+                                        true
                                     );
 
     const int totalEntries = showPlans
@@ -231,11 +230,6 @@ static Element renderTuiRightPanel(
                hbox({
                    text("  "),
                    text(title) | color(Color::Cyan) | bold
-               }),
-               separatorEmpty(),
-               hbox({
-                   text("  "),
-                   text(truncateText(subtitle, kRightPanelTextWidth)) | color(Color::GrayDark)
                }),
                separatorEmpty(),
                hbox({
@@ -282,12 +276,10 @@ Element renderTuiConfigurationLayout(
 
 
     if (state.coordinates.showYField) {
-
         leftElements.push_back(renderCenteredInputRow("目的地 Y:", inputY));
         leftElements.push_back(separatorEmpty());
         leftElements.push_back(renderCenteredInputRow("目的地 Z:", inputZ));
     } else {
-
         leftElements.push_back(renderCenteredInputRow("目的地 Z:", inputZ));
         leftElements.push_back(separatorEmpty());
         leftElements.push_back(text("") | size(HEIGHT, EQUAL, 1)); // 占位符
