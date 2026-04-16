@@ -27,15 +27,21 @@ enum class TuiRightPanelMode
 
 struct TuiCoordinateForm
 {
-    std::string x = "0.000";
-    std::string y = "64.000";
-    std::string z = "0.000";
+    std::string x = "0";
+    std::string y = "128";
+    std::string z = "0";
     std::string redTnt = "0";
     std::string blueTnt = "0";
     std::string direction = "North";
     bool showYField = false;
-};
 
+    bool xNeedsSelect = false;
+    bool yNeedsSelect = false;
+    bool zNeedsSelect = false;
+    bool redNeedsSelect = false;
+    bool blueNeedsSelect = false;
+    bool dirNeedsSelect = false;
+};
 struct TuiState
 {
     TuiPage page = TuiPage::Title;

@@ -14,7 +14,7 @@
 
 namespace
 {
-    constexpr int kListVisibleRows = 13;
+    constexpr int kListVisibleRows = 22;
 
     std::string formatDouble(const double value, const int precision)
     {
