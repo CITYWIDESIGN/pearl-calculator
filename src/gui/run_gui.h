@@ -1,0 +1,6 @@
+#ifndef PEARLCALCULATOR_GUI_RUN_GUI_H
+#define PEARLCALCULATOR_GUI_RUN_GUI_H
+
+int runGui();
+
+#endif

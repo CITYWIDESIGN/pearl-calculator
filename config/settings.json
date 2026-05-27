@@ -1,0 +1,19 @@
+{
+  "calc": {
+    "accuracyPriority": true,
+    "below1_21_1": false,
+    "extraSimulationTicks": 200
+  },
+  "menu": {
+    "animationSpeed": 1.0,
+    "cornerRadius": 6.0,
+    "fontSize": 18.0,
+    "language": 1,
+    "monoFont": "JetBrains Mono",
+    "saveLayout": true,
+    "theme": 0,
+    "uiFont": "Microsoft YaHei UI",
+    "uiScale": 1.0,
+    "windowOpacity": 1.0
+  }
+}
