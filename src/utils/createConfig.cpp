@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include "../nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 using ordered_json = nlohmann::ordered_json;
 namespace fs = std::filesystem;

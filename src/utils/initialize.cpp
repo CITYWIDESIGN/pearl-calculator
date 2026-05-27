@@ -3,6 +3,9 @@
 //
 
 #include <windows.h>
+#include <fcntl.h>
+#include <io.h>
+#include <cstdio>
 
 #include "initialize.h"
 #include "loadConfig.h"
@@ -15,8 +18,13 @@ namespace
 
 void initializeApplication()
 {
-    // 修正 Windows 控制台的 UTF-8 输出。
+    // 控制台输入/输出编码全部切到 UTF-8，避免中文乱码。
     SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+
+    // 让 stdout / stderr 走二进制 UTF-8，否则 cmd 默认 GBK 仍会乱码。
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+    std::setvbuf(stderr, nullptr, _IONBF, 0);
 
     // 加载外部配置。
     loadConfiguration(kConfigDirectory);

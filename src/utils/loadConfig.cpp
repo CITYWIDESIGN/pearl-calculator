@@ -9,7 +9,7 @@
 #include <iostream>
 
 #include "../data.h"
-#include "../nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include "createConfig.h"
 
 using json = nlohmann::json;
